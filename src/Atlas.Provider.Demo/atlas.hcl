@@ -7,8 +7,7 @@ data "external_schema" "efcore" {
   ]
 }
 
-env {
-  name = atlas.env
+env "efcore" {
   src = data.external_schema.efcore.url
   dev = "docker://mysql/8/dev"
   migration {
