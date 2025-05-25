@@ -33,7 +33,8 @@ jobs:
       - name: Setup .NET Core SDK cache
         uses: actions/cache@v3
         with:
-          path: ${{ env.DOTNET_ROOT }}
+          path: |
+            C:\Program Files\dotnet
           key: ${{ runner.os }}-dotnet-sdk-8.0.x-${{ hashFiles('global.json', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-dotnet-sdk-8.0.x-
@@ -100,7 +101,10 @@ jobs:
       - name: Setup .NET Core SDK cache
         uses: actions/cache@v3
         with:
-          path: ${{ env.DOTNET_ROOT }}
+          path: |
+            /usr/local/share/dotnet
+            /usr/share/dotnet
+            ~/.dotnet
           key: ${{ runner.os }}-dotnet-sdk-multi-${{ hashFiles('global.json', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-dotnet-sdk-multi-
