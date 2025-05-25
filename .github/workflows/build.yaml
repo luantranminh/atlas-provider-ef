@@ -57,8 +57,8 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        dialect: [mysql]
+        os: [ubuntu-latest, macos-latest]
+        dialect: [mysql, postgres, sqlserver, sqlite]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -83,7 +83,7 @@ jobs:
       - name: Print SQL from Demo project
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
-        run: dotnet tool restore && dotnet atlas-ef -- sqlserver
+        run: dotnet tool restore && dotnet atlas-ef -- ${{ matrix.dialect }}
       - name: Install Atlas
         uses: ariga/setup-atlas@v0
       - name: Verify Atlas CLI version
@@ -92,7 +92,7 @@ jobs:
       - name: Check migrations for ${{ matrix.dialect }}
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          atlas migrate diff --env efcore --dev-url "docker://mysql/8/dev"
+          atlas migrate diff --env ef --var dialect=${{ matrix.dialect }}
         env:
           ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
       - name: Verify migrations generated
