@@ -30,6 +30,13 @@ jobs:
         with:
           lfs: true
           fetch-depth: 0
+      - name: Setup .NET Core SDK cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DOTNET_ROOT }}
+          key: ${{ runner.os }}-dotnet-sdk-8.0.x-${{ hashFiles('global.json', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-sdk-8.0.x-
       - name: Install .NET Core SDK
         uses: actions/setup-dotnet@v3.2.0
         with:
@@ -37,6 +44,30 @@ jobs:
       - name: List SDKs
         shell: pwsh
         run: dotnet --list-sdks
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Cache .NET Tools
+        uses: actions/cache@v3
+        with:
+          path: ./.dotnet/tools
+          key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-tools-
+      - name: Cache Build Output
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/obj
+            **/bin
+          key: ${{ runner.os }}-build-${{ hashFiles('**/*.csproj', '**/*.props') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ hashFiles('**/*.csproj', '**/*.props') }}-
+            ${{ runner.os }}-build-
       - name: Dotnet Tool Restore
         shell: pwsh
         run: dotnet tool restore
@@ -57,7 +88,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [macos-latest]
         dialect: [mysql, postgres, sqlserver, sqlite]
     runs-on: ${{ matrix.os }}
     steps:
@@ -66,12 +97,33 @@ jobs:
         with:
           lfs: true
           fetch-depth: 0
+      - name: Setup .NET Core SDK cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.DOTNET_ROOT }}
+          key: ${{ runner.os }}-dotnet-sdk-multi-${{ hashFiles('global.json', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-sdk-multi-
       - name: Install .NET Core SDK
         uses: actions/setup-dotnet@v3.2.0
         with:
           dotnet-version: |
             6.0.x
             8.0.x
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Cache .NET Tools
+        uses: actions/cache@v3
+        with:
+          path: ./.dotnet/tools
+          key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-tools-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
