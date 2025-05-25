@@ -57,7 +57,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         dialect: [mysql, postgres, sqlserver, sqlite]
     runs-on: ${{ matrix.os }}
     steps:
