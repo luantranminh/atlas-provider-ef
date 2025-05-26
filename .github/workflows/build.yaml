@@ -81,8 +81,8 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [macos-13]
-        dialect: [mysql, postgres, sqlserver, sqlite]
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        dialect: [sqlite]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -127,8 +127,51 @@ jobs:
       - name: Verify Atlas CLI version
         shell: pwsh
         run: atlas version
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Set up Docker
         uses: docker/setup-docker-action@v4
+      - name: Cache Docker images
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.docker-cache
+          key: ${{ runner.os }}-docker-images-${{ matrix.dialect }}-${{ hashFiles('src/Atlas.Provider.Demo/atlas.hcl') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-images-${{ matrix.dialect }}-
+            ${{ runner.os }}-docker-images-
+      - name: Load cached Docker images
+        if: matrix.dialect != 'sqlite'
+        run: |
+          if [ -f /tmp/.docker-cache/${{ matrix.dialect }}.tar ]; then
+            echo "Loading cached Docker image for ${{ matrix.dialect }}"
+            docker load -i /tmp/.docker-cache/${{ matrix.dialect }}.tar
+          fi
+      - name: Pre-pull database Docker image
+        if: matrix.dialect != 'sqlite'
+        run: |
+          case "${{ matrix.dialect }}" in
+            mysql)
+              if ! docker image inspect mysql:8 >/dev/null 2>&1; then
+                docker pull mysql:8
+                mkdir -p /tmp/.docker-cache
+                docker save mysql:8 -o /tmp/.docker-cache/${{ matrix.dialect }}.tar
+              fi
+              ;;
+            postgres)
+              if ! docker image inspect postgres:15 >/dev/null 2>&1; then
+                docker pull postgres:15
+                mkdir -p /tmp/.docker-cache
+                docker save postgres:15 -o /tmp/.docker-cache/${{ matrix.dialect }}.tar
+              fi
+              ;;
+            sqlserver)
+              if ! docker image inspect mcr.microsoft.com/mssql/server:2022-latest >/dev/null 2>&1; then
+                docker pull mcr.microsoft.com/mssql/server:2022-latest
+                mkdir -p /tmp/.docker-cache
+                docker save mcr.microsoft.com/mssql/server:2022-latest -o /tmp/.docker-cache/${{ matrix.dialect }}.tar
+              fi
+              ;;
+          esac
       - name: Check migrations for ${{ matrix.dialect }}
         working-directory: ./src/Atlas.Provider.Demo
         run: |
