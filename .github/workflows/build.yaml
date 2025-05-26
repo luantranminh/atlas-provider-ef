@@ -81,7 +81,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        os: [macos-latest]
+        os: [macos-13]
         dialect: [mysql, postgres, sqlserver, sqlite]
     runs-on: ${{ matrix.os }}
     steps:
