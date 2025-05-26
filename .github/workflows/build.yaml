@@ -30,14 +30,6 @@ jobs:
         with:
           lfs: true
           fetch-depth: 0
-      - name: Setup .NET Core SDK cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            C:\Program Files\dotnet
-          key: ${{ runner.os }}-dotnet-sdk-8.0.x-${{ hashFiles('global.json', '**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-dotnet-sdk-8.0.x-
       - name: Install .NET Core SDK
         uses: actions/setup-dotnet@v3.2.0
         with:
@@ -98,16 +90,6 @@ jobs:
         with:
           lfs: true
           fetch-depth: 0
-      - name: Setup .NET Core SDK cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            /usr/local/share/dotnet
-            /usr/share/dotnet
-            ~/.dotnet
-          key: ${{ runner.os }}-dotnet-sdk-multi-${{ hashFiles('global.json', '**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-dotnet-sdk-multi-
       - name: Install .NET Core SDK
         uses: actions/setup-dotnet@v3.2.0
         with:
