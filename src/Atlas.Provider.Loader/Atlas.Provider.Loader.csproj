@@ -12,6 +12,7 @@
     <RollForward>Major</RollForward>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>atlas-ef</ToolCommandName>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     
     <!-- Nuspec -->
     <PackageId>atlas-ef</PackageId>
