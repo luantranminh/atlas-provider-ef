@@ -129,7 +129,8 @@ jobs:
         shell: bash
         run: |
           if git status --porcelain | grep -vq 'dotnet-tools.json' ; then
-            echo "you need to run 'atlas migrate diff --env ef' and commit the changes"
-            git --no-pager diff
+            echo "You need to run 'atlas migrate diff --env ef' and commit the changes"
+            echo ""
+            git status
             exit 1
           fi
