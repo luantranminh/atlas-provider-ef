@@ -1,4 +1,4 @@
--- atlas:pos AuditEntry[type=table] Program.cs:85:88
+-- atlas:pos AuditEntry[type=table] Program.cs:87:90
 -- atlas:pos Blogging.Blogs[type=table] models/Blog.cs:7:22
 -- atlas:pos Posts[type=table] models/Post.cs:6:15
 -- atlas:delimiter GO
