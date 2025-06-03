@@ -83,9 +83,17 @@ jobs:
           nupkg_file=$(find ../../artifacts -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
           version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
           echo "Installing atlas-ef version: $version"
-          dotnet tool install --add-source ../../artifacts --version "$version" atlas-ef
+          
+          # Try multiple installation approaches
+          echo "Attempting installation with both local and NuGet sources..."
+          dotnet tool install --add-source ../../artifacts --add-source https://api.nuget.org/v3/index.json --version "$version" atlas-ef || \
+          {
+            echo "First attempt failed, trying with restored dependencies..."
+            dotnet restore
+            dotnet tool install --add-source ../../artifacts --add-source https://api.nuget.org/v3/index.json --version "$version" atlas-ef
+          }
+          
           dotnet atlas-ef --version
-          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
