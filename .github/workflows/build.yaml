@@ -85,6 +85,7 @@ jobs:
           echo "Installing atlas-ef version: $version"
           dotnet tool install --add-source ../../artifacts --version "$version" atlas-ef
           dotnet atlas-ef --version
+          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
@@ -97,7 +98,13 @@ jobs:
           which dotnet
           dotnet --version
           echo "Attempting to run atlas-ef with verbose output..."
-          dotnet atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
+          echo "Testing basic atlas-ef command first..."
+          dotnet atlas-ef --help > help_output.txt 2>&1 || echo "Help command failed with code $?"
+          echo "Help command output:"
+          cat help_output.txt
+          
+          echo "Now trying the actual command..."
+          timeout 60 dotnet atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
           exit_code=$?
           
           echo "Command exit code: $exit_code"
