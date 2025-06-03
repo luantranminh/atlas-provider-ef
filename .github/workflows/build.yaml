@@ -81,7 +81,7 @@ jobs:
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          nupkg_file=$(find ../../artifacts -name "atlas-ef.*.nupkg" | head -1)
+          nupkg_file=$(find ../../artifacts -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
           version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
           echo "Installing atlas-ef version: $version"
           dotnet tool install --add-source ../../artifacts --version "$version" atlas-ef
