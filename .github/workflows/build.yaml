@@ -76,27 +76,16 @@ jobs:
         with:
           name: build-artifacts
           path: "./artifacts"
-      - name: Install AtlasEF from artifacts
-        shell: pwsh
-        run: |
-          Write-Host "Finding atlas-ef package in artifacts..."
-          $package = Get-ChildItem ./artifacts -Filter "atlas-ef.*.nupkg" | Select-Object -First 1
-          if (-not $package) {
-            Write-Error "No atlas-ef package found in artifacts"
-            exit 1
-          }
-          Write-Host "Found package: $($package.Name)"
-          
-          # Extract version from package filename (atlas-ef.1.0.0-build.19.nupkg -> 1.0.0-build.19)
-          $version = $package.BaseName -replace '^atlas-ef\.', ''
-          Write-Host "Extracted version: $version"
-          
-          Write-Host "Installing atlas-ef version $version from artifacts..."
-          dotnet tool install --add-source ./artifacts --version $version atlas-ef --global
-      - name: Test AtlasEF and generate SQL
+      - name: Restore local tools and test AtlasEF
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
         run: |
+          Write-Host "Restoring local tools from artifacts..."
+          dotnet tool restore --add-source ../../artifacts
+          
+          Write-Host "Checking local tools installation..."
+          dotnet tool list
+          
           Write-Host "Verifying atlas-ef installation..."
           dotnet atlas-ef --version
           
