@@ -101,12 +101,28 @@ jobs:
           echo "Packed files:"
           ls -la ./nupkg/
           
-          # Install the tool from local package source
-          dotnet tool install --add-source ./nupkg -g atlas-ef
+          # Extract version from the nupkg file
+          nupkg_file=$(find ./nupkg -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
+          if [ -z "$nupkg_file" ]; then
+            echo "Error: No atlas-ef nupkg file found"
+            exit 1
+          fi
+          
+          version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
+          echo "Extracted version: $version"
+          
+          # Install the tool from local package source with specific version
+          dotnet tool install --add-source ./nupkg --version "$version" -g atlas-ef
           
           # Verify installation
           echo "Testing installed tool..."
-          dotnet atlas-ef --help || echo "Help command completed with code $?"
+          echo "Checking global tools:"
+          dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
+          
+          # Test the tool installation
+          dotnet atlas-ef --help || echo "Dotnet command failed with code $?"
+          # print demo sql
+          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
