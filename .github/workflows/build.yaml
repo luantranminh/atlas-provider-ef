@@ -114,6 +114,9 @@ jobs:
             diff current_sqlserver.sql generated_sqlserver.sql
             exit 1
           fi
+          
+          # Clean up temporary file
+          rm -f generated_sqlserver.sql
       - name: Install Atlas CLI
         uses: ariga/setup-atlas@v0
       - name: Verify Atlas CLI version
@@ -131,6 +134,6 @@ jobs:
           if git status --porcelain | grep -vq 'dotnet-tools.json' ; then
             echo "You need to run 'atlas migrate diff --env ef' and commit the changes"
             echo ""
-            git status
+            git status --porcelain
             exit 1
           fi
