@@ -7,7 +7,7 @@ GO
 
 
 CREATE TABLE [AuditEntry] (
-
+    [Name] nvarchar(max) NULL
 );
 GO
 
