@@ -81,7 +81,8 @@ jobs:
         working-directory: ./src/Atlas.Provider.Demo
         run: |
           Write-Host "Restoring local tools from artifacts..."
-          dotnet tool restore --add-source ../../artifacts
+          dotnet nuget locals all --clear
+          dotnet tool restore --no-cache --add-source ../../artifacts --ignore-failed-sources
           
           Write-Host "Checking local tools installation..."
           dotnet tool list
