@@ -1,13 +1,5 @@
 {
   "version": 1,
   "isRoot": true,
-  "tools": {
-    "atlas-ef": {
-      "version": "0.2.0",
-      "commands": [
-        "atlas-ef"
-      ],
-      "rollForward": false
-    }
-  }
+  "tools": {}
 }

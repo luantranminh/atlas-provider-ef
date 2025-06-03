@@ -80,9 +80,32 @@ jobs:
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          Write-Host "Restoring local tools from artifacts..."
+          Write-Host "Clearing NuGet cache..."
           dotnet nuget locals all --clear
-          dotnet tool restore --no-cache --add-source ../../artifacts --ignore-failed-sources
+          
+          Write-Host "Finding atlas-ef package version from artifacts..."
+          $packageFile = Get-ChildItem "../../artifacts/atlas-ef.*.nupkg" | Select-Object -First 1
+          if ($packageFile) {
+            $packageName = $packageFile.Name
+            Write-Host "Found package: $packageName"
+            # Extract version from filename like atlas-ef.0.0.0-alpha.0.47.nupkg
+            $version = $packageName -replace '^atlas-ef\.(.+)\.nupkg$', '$1'
+            Write-Host "Extracted version: $version"
+          } else {
+            Write-Error "No atlas-ef package found in artifacts"
+            exit 1
+          }
+          
+          Write-Host "Uninstalling any existing atlas-ef tool..."
+          try {
+            dotnet tool uninstall atlas-ef
+            Write-Host "Existing tool uninstalled"
+          } catch {
+            Write-Host "No existing tool to uninstall"
+          }
+          
+          Write-Host "Installing atlas-ef from local artifacts..."
+          dotnet tool install atlas-ef --no-cache --add-source ../../artifacts --ignore-failed-sources --version $version
           
           Write-Host "Checking local tools installation..."
           dotnet tool list
