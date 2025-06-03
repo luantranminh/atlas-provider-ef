@@ -56,8 +56,7 @@ Task("Pack")
   .Description("Creates NuGet packages and outputs them to the artifacts directory.")
   .Does(() =>
   {
-    // Pack the tool project specifically to ensure proper dependency resolution
-    DotNetPack("./src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj", new DotNetPackSettings()
+    DotNetPack(".", new DotNetPackSettings()
     {
       Configuration = configuration,
       IncludeSymbols = true,
