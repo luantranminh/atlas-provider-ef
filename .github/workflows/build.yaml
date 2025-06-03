@@ -53,12 +53,11 @@ jobs:
           path: "./artifacts"
 
   test-tool:
-    name: Test tool on ${{ matrix.os }} - ${{ matrix.dialect }}
+    name: Test tool on ${{ matrix.os }}
     needs: build
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        dialect: [sqlite]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -80,19 +79,33 @@ jobs:
       - name: Install AtlasEF
         shell: pwsh
         run: dotnet tool install --prerelease --add-source ./artifacts atlas-ef
-      - name: Print SQL from Demo project
+      - name: Compare generated SQL with current_sqlserver.sql
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
-        run: dotnet tool restore && dotnet atlas-ef -- sqlserver
+        run: |
+          dotnet tool restore
+          dotnet atlas-ef -- sqlserver > generated_sqlserver.sql
+          if (!(Test-Path "current_sqlserver.sql")) {
+            Write-Error "current_sqlserver.sql not found"
+            exit 1
+          }
+          $diff = Compare-Object (Get-Content "current_sqlserver.sql") (Get-Content "generated_sqlserver.sql")
+          if ($diff) {
+            Write-Host "Differences found between current_sqlserver.sql and generated SQL:"
+            $diff | Format-Table
+            exit 1
+          } else {
+            Write-Host "Generated SQL matches current_sqlserver.sql"
+          }
       - name: Install Atlas CLI
         uses: ariga/setup-atlas@v0
       - name: Verify Atlas CLI version
         shell: pwsh
         run: atlas version
-      - name: Check migrations for ${{ matrix.dialect }}
+      - name: Check migrations for sqlite
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          atlas migrate diff --env ef --var dialect=${{ matrix.dialect }}
+          atlas migrate diff --env ef --var dialect=sqlite
         env:
           ATLAS_TOKEN: ${{ secrets.ATLAS_TOKEN }}
       - name: Verify migrations generated

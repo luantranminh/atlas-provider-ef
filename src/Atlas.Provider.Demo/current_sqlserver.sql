@@ -1,0 +1,46 @@
+-- atlas:pos AuditEntry[type=table] Program.cs:85:88
+-- atlas:pos Blogging.Blogs[type=table] models/Blog.cs:7:22
+-- atlas:pos Posts[type=table] models/Post.cs:6:15
+-- atlas:delimiter GO
+IF SCHEMA_ID(N'Blogging') IS NULL EXEC(N'CREATE SCHEMA [Blogging];');
+GO
+
+
+CREATE TABLE [AuditEntry] (
+
+);
+GO
+
+
+CREATE TABLE [Blogging].[Blogs] (
+    [BlogId] int NOT NULL IDENTITY,
+    [Url] varchar(200) NOT NULL,
+    [Rating] decimal(5,2) NOT NULL,
+    [Title] nvarchar(max) NOT NULL,
+    [Content] nvarchar(max) NOT NULL,
+    [Author] nvarchar(200) NOT NULL DEFAULT N'Anonymous',
+    CONSTRAINT [PK_Blogs] PRIMARY KEY ([BlogId]),
+    CONSTRAINT [AK_Blogs_Url] UNIQUE ([Url])
+);
+DECLARE @description AS sql_variant;
+SET @description = CONCAT(N'Content contains new lines \n\r and ', NCHAR(10), N' for example');
+EXEC sp_addextendedproperty 'MS_Description', @description, 'SCHEMA', N'Blogging', 'TABLE', N'Blogs', 'COLUMN', N'Content';
+GO
+
+
+CREATE TABLE [Posts] (
+    [PostId] int NOT NULL IDENTITY,
+    [Title] nvarchar(max) NOT NULL,
+    [Content] nvarchar(max) NOT NULL,
+    [BlogUrl] varchar(200) NULL,
+    CONSTRAINT [PK_Posts] PRIMARY KEY ([PostId]),
+    CONSTRAINT [FK_Posts_Blogs_BlogUrl] FOREIGN KEY ([BlogUrl]) REFERENCES [Blogging].[Blogs] ([Url])
+);
+GO
+
+
+CREATE INDEX [IX_Posts_BlogUrl] ON [Posts] ([BlogUrl]);
+GO
+
+
+

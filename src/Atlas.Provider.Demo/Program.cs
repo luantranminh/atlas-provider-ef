@@ -59,6 +59,11 @@ namespace DemoNamespace
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Blog>()
+                .ToTable("Blogs", schema: "Blogging");
+
+            modelBuilder.Entity<AuditEntry>().HasNoKey();
+
             modelBuilder.Entity<Post>()
                 .HasOne(p => p.Blog)
                 .WithMany(b => b.Posts)
@@ -77,30 +82,8 @@ namespace DemoNamespace
         }
     }
 
-    public class Blog
+    public class AuditEntry
     {
-        [Key]
-        public int BlogId { get; set; }
-
-        [Column(TypeName = "varchar(200)")]
-        public string? Url { get; set; }
-
-        [Column(TypeName = "decimal(5, 2)")]
-        public decimal Rating { get; set; }
-        public string Title { get; set; } = string.Empty;
-        [Comment("Content contains new lines \\n\\r and \n for example")]
-        public string Content { get; set; } = string.Empty;
-        public string Author { get; set; } = string.Empty;
-        public List<Post>? Posts { get; set; }
-    }
-
-    public class Post
-    {
-        [Key]
-        public int PostId { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string? BlogUrl { get; set; }
-        public Blog? Blog { get; set; }
+       
     }
 }
