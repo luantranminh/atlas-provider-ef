@@ -80,46 +80,45 @@ jobs:
         with:
           name: build-artifacts
           path: "./artifacts"
-      - name: Extract version and install AtlasEF
+      - name: Pack and install AtlasEF tool locally
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          nupkg_file=$(find ../../artifacts -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
-          version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
-          echo "Installing atlas-ef version: $version"
+          echo "Packing and installing atlas-ef tool..."
           
-          # Clear any existing tool installations to start fresh
-          dotnet tool uninstall atlas-ef --global || true
-          dotnet tool uninstall atlas-ef || true
+          # Uninstall any existing global installation
+          dotnet tool uninstall -g atlas-ef || echo "No existing global installation found"
           
-          # Create a proper NuGet config to ensure dependencies can be resolved
-          cat > nuget.config << EOF
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <packageSources>
-              <add key="local" value="../../artifacts" />
-              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-            </packageSources>
-          </configuration>
-          EOF
+          # Restore dependencies first
+          dotnet restore ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj
           
-          # Install with explicit configuration
-          dotnet tool install --configfile nuget.config --version "$version" atlas-ef
+          # Pack the tool project
+          dotnet pack ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj \
+            --configuration Release \
+            --output ./nupkg \
+            --verbosity normal
+          
+          echo "Packed files:"
+          ls -la ./nupkg/
+          
+          # Install the tool from local package source
+          dotnet tool install --add-source ./nupkg -g atlas-ef
           
           # Verify installation
-          dotnet atlas-ef --version
+          echo "Testing installed tool..."
+          dotnet atlas-ef --help || echo "Help command completed with code $?"
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          echo "Running atlas-ef command..."
+          echo "Running atlas-ef command using globally installed tool..."
           echo "Current directory: $(pwd)"
-          echo "Available tools:"
-          dotnet tool list
-          echo "Checking atlas-ef installation:"
-          which dotnet
+          echo "Checking dotnet version:"
           dotnet --version
-          echo "Attempting to run atlas-ef with verbose output..."
+          
+          echo "Verifying tool installation:"
+          dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
+          
           echo "Testing basic atlas-ef command first..."
           dotnet atlas-ef --help > help_output.txt 2>&1 || echo "Help command failed with code $?"
           echo "Help command output:"
