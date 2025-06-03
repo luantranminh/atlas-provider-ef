@@ -80,19 +80,20 @@ jobs:
         with:
           name: build-artifacts
           path: "./artifacts"
-      - name: Install AtlasEF tool from artifacts
+      - name: Pack and install AtlasEF tool locally
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          # Uninstall existing tool
+          # Uninstall existing and pack tool
           dotnet tool uninstall -g atlas-ef || true
+          dotnet restore ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj
+          dotnet pack ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj -c Release -o ./nupkg
           
-          # Use pre-built package from artifacts
-          nupkg_file=$(find ../../artifacts -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
+          # Extract version and install
+          nupkg_file=$(find ./nupkg -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
           version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
-          dotnet tool install --add-source ../../artifacts --version "$version" -g atlas-ef
+          dotnet tool install --add-source ./nupkg --version "$version" -g atlas-ef
           atlas-ef --version
-          atlas-ef -- sqlite
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
