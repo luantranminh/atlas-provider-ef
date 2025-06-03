@@ -83,14 +83,33 @@ jobs:
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          dotnet atlas-ef -- sqlserver > generated_sqlserver.sql
+          Write-Host "Running atlas-ef command..."
+          dotnet atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
+          
+          Write-Host "Command exit code: $LASTEXITCODE"
+          
+          if (!(Test-Path "generated_sqlserver.sql")) {
+            Write-Error "generated_sqlserver.sql was not created"
+            exit 1
+          }
+          
+          $generatedContent = Get-Content "generated_sqlserver.sql" -ErrorAction SilentlyContinue
           Write-Host "Generated SQL content:"
-          Get-Content "generated_sqlserver.sql" | Write-Host
+          if ($generatedContent) {
+            $generatedContent | Write-Host
+          } else {
+            Write-Host "Generated file is empty or unreadable"
+            Write-Host "File size: $((Get-Item 'generated_sqlserver.sql').Length) bytes"
+            exit 1
+          }
+          
           if (!(Test-Path "current_sqlserver.sql")) {
             Write-Error "current_sqlserver.sql not found"
             exit 1
           }
-          $diff = Compare-Object (Get-Content "current_sqlserver.sql") (Get-Content "generated_sqlserver.sql")
+          
+          $currentContent = Get-Content "current_sqlserver.sql"
+          $diff = Compare-Object $currentContent $generatedContent
           if ($diff) {
             Write-Host "Differences found between current_sqlserver.sql and generated SQL:"
             $diff | Format-Table
