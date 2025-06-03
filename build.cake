@@ -64,8 +64,6 @@ Task("Pack")
       {
         ContinuousIntegrationBuild = !BuildSystem.IsLocalBuild,
       },
-      NoBuild = true,
-      NoRestore = true,
       OutputDirectory = artifactsDirectory,
     });
   });
