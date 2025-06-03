@@ -83,7 +83,7 @@ jobs:
       - name: Print SQL from Demo project
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
-        run: dotnet tool restore && dotnet atlas-ef -- sqlserver
+        run: dotnet atlas-ef -- sqlserver
       - name: Install Atlas CLI
         uses: ariga/setup-atlas@v0
       - name: Verify Atlas CLI version
