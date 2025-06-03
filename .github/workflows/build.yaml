@@ -138,7 +138,7 @@ jobs:
           cat help_output.txt
           
           echo "Now trying the actual command..."
-          timeout 60 atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
+          atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
           exit_code=$?
           
           echo "Command exit code: $exit_code"
