@@ -78,8 +78,7 @@ jobs:
           path: "./artifacts"
       - name: Install AtlasEF
         shell: pwsh
-        working-directory: ./src/Atlas.Provider.Demo
-        run: dotnet tool install --prerelease --add-source ../../artifacts atlas-ef
+        run: dotnet tool install --prerelease --add-source ./artifacts atlas-ef --global
       - name: Compare generated SQL with current_sqlserver.sql
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
