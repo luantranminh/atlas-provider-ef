@@ -119,10 +119,7 @@ jobs:
           echo "Checking global tools:"
           dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
           
-          # Test the tool installation
-          dotnet atlas-ef --help || echo "Dotnet command failed with code $?"
-          # print demo sql
-          dotnet atlas-ef -- sqlserver
+          atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
