@@ -94,6 +94,7 @@ jobs:
           }
           
           dotnet atlas-ef --version
+          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
