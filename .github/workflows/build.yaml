@@ -84,28 +84,43 @@ jobs:
           dotnet nuget locals all --clear
           
           Write-Host "Finding atlas-ef package version from artifacts..."
-          $packageFile = Get-ChildItem "../../artifacts/atlas-ef.*.nupkg" | Select-Object -First 1
-          if ($packageFile) {
+          $packageFiles = Get-ChildItem "../../artifacts/atlas-ef.*.nupkg" | Where-Object { $_.Name -notlike "*.symbols.nupkg" }
+          if ($packageFiles) {
+            $packageFile = $packageFiles | Select-Object -First 1
             $packageName = $packageFile.Name
             Write-Host "Found package: $packageName"
-            # Extract version from filename like atlas-ef.0.0.0-alpha.0.47.nupkg
-            $version = $packageName -replace '^atlas-ef\.(.+)\.nupkg$', '$1'
-            Write-Host "Extracted version: $version"
+            # Extract version from filename like atlas-ef.0.0.0-alpha.0.48.nupkg
+            if ($packageName -match '^atlas-ef\.(.+)\.nupkg$') {
+              $version = $matches[1]
+              Write-Host "Extracted version: $version"
+            } else {
+              Write-Error "Could not extract version from package name: $packageName"
+              exit 1
+            }
           } else {
             Write-Error "No atlas-ef package found in artifacts"
+            Write-Host "Available files in artifacts:"
+            Get-ChildItem "../../artifacts/" | ForEach-Object { Write-Host "  $($_.Name)" }
             exit 1
           }
           
           Write-Host "Uninstalling any existing atlas-ef tool..."
           try {
-            dotnet tool uninstall atlas-ef
+            dotnet tool uninstall atlas-ef 2>$null
             Write-Host "Existing tool uninstalled"
           } catch {
-            Write-Host "No existing tool to uninstall"
+            Write-Host "No existing tool to uninstall (this is normal)"
           }
           
-          Write-Host "Installing atlas-ef from local artifacts..."
+          Write-Host "Installing atlas-ef from local artifacts with version $version..."
           dotnet tool install atlas-ef --no-cache --add-source ../../artifacts --ignore-failed-sources --version $version
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to install atlas-ef tool"
+            Write-Host "Available packages in artifacts:"
+            Get-ChildItem "../../artifacts/*.nupkg" | ForEach-Object { Write-Host "  $($_.Name)" }
+            exit 1
+          }
           
           Write-Host "Checking local tools installation..."
           dotnet tool list
