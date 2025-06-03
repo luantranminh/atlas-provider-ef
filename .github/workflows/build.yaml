@@ -133,12 +133,12 @@ jobs:
           dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
           
           echo "Testing basic atlas-ef command first..."
-          dotnet atlas-ef --help > help_output.txt 2>&1 || echo "Help command failed with code $?"
+          atlas-ef --help > help_output.txt 2>&1 || echo "Help command failed with code $?"
           echo "Help command output:"
           cat help_output.txt
           
           echo "Now trying the actual command..."
-          timeout 60 dotnet atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
+          timeout 60 atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
           exit_code=$?
           
           echo "Command exit code: $exit_code"
