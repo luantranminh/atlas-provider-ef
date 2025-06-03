@@ -76,14 +76,31 @@ jobs:
         with:
           name: build-artifacts
           path: "./artifacts"
-      - name: Install AtlasEF
+      - name: Install AtlasEF from artifacts
         shell: pwsh
-        run: dotnet tool install --prerelease --add-source ./artifacts atlas-ef --global
-      - name: Restore local tools and verify AtlasEF
+        run: |
+          Write-Host "Finding atlas-ef package in artifacts..."
+          $package = Get-ChildItem ./artifacts -Filter "atlas-ef.*.nupkg" | Select-Object -First 1
+          if (-not $package) {
+            Write-Error "No atlas-ef package found in artifacts"
+            exit 1
+          }
+          Write-Host "Found package: $($package.Name)"
+          
+          # Extract version from package filename (atlas-ef.1.0.0-build.19.nupkg -> 1.0.0-build.19)
+          $version = $package.BaseName -replace '^atlas-ef\.', ''
+          Write-Host "Extracted version: $version"
+          
+          Write-Host "Installing atlas-ef version $version from artifacts..."
+          dotnet tool install --prerelease --add-source ./artifacts --version $version atlas-ef --global
+      - name: Test AtlasEF and generate SQL
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          dotnet tool restore --add-source ../../artifacts
+          Write-Host "Verifying atlas-ef installation..."
+          dotnet atlas-ef --version
+          
+          Write-Host "Generating SQL for demo..."
           dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: pwsh
