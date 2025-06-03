@@ -45,7 +45,9 @@ namespace DemoNamespace
                     options.UseMySql(
                         "Server=localhost;Database=YourDatabaseName;User=root;Password=your_password;",
                         ServerVersion.Create(8, 0, 0, ServerType.MySql),
-                        optionsBuilder => optionsBuilder.DisableLineBreakToCharSubstition()
+                        optionsBuilder => optionsBuilder
+                            .DisableLineBreakToCharSubstition()
+                            .SchemaBehavior(MySqlSchemaBehavior.Ignore)
                         );
                     break;
                 case "mariadb":
@@ -84,6 +86,6 @@ namespace DemoNamespace
 
     public class AuditEntry
     {
-       
+        public string? Name { get; set; }
     }
 }
