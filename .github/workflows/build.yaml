@@ -129,6 +129,9 @@ jobs:
           echo "Checking dotnet version:"
           dotnet --version
           
+          # Add .NET tools to PATH
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          
           echo "Verifying tool installation:"
           dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
           
