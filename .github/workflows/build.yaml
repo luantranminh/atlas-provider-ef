@@ -76,114 +76,51 @@ jobs:
         with:
           name: build-artifacts
           path: "./artifacts"
-      - name: Restore local tools and test AtlasEF
-        shell: pwsh
+      - name: Extract version and install AtlasEF
+        shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          Write-Host "Clearing NuGet cache..."
-          dotnet nuget locals all --clear
-          
-          Write-Host "Finding atlas-ef package version from artifacts..."
-          $packageFiles = Get-ChildItem "../../artifacts/atlas-ef.*.nupkg" | Where-Object { $_.Name -notlike "*.symbols.nupkg" }
-          if ($packageFiles) {
-            $packageFile = $packageFiles | Select-Object -First 1
-            $packageName = $packageFile.Name
-            Write-Host "Found package: $packageName"
-            # Extract version from filename like atlas-ef.0.0.0-alpha.0.48.nupkg
-            if ($packageName -match '^atlas-ef\.(.+)\.nupkg$') {
-              $version = $matches[1]
-              Write-Host "Extracted version: $version"
-            } else {
-              Write-Error "Could not extract version from package name: $packageName"
-              exit 1
-            }
-          } else {
-            Write-Error "No atlas-ef package found in artifacts"
-            Write-Host "Available files in artifacts:"
-            Get-ChildItem "../../artifacts/" | ForEach-Object { Write-Host "  $($_.Name)" }
-            exit 1
-          }
-          
-          Write-Host "Updating tool manifest with atlas-ef version $version..."
-          # First, ensure we have a clean tool manifest
-          $toolsManifest = ".config/dotnet-tools.json"
-          if (!(Test-Path $toolsManifest)) {
-            Write-Host "Creating new tool manifest..."
-            dotnet new tool-manifest
-          }
-          
-          # Remove existing atlas-ef from manifest if it exists
-          try {
-            dotnet tool uninstall atlas-ef 2>$null
-            Write-Host "Existing tool removed from manifest"
-          } catch {
-            Write-Host "No existing tool in manifest (this is normal)"
-          }
-          
-          Write-Host "Adding atlas-ef to tool manifest with version $version..."
-          dotnet tool install atlas-ef --no-cache --add-source ../../artifacts --ignore-failed-sources --version $version
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to add atlas-ef tool to manifest"
-            Write-Host "Available packages in artifacts:"
-            Get-ChildItem "../../artifacts/*.nupkg" | ForEach-Object { Write-Host "  $($_.Name)" }
-            exit 1
-          }
-          
-          Write-Host "Restoring tools from manifest to ensure proper dependency resolution..."
-          dotnet tool restore
-          
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to restore tools from manifest"
-            exit 1
-          }
-          
-          Write-Host "Checking local tools installation..."
-          dotnet tool list
-          
-          Write-Host "Verifying atlas-ef installation..."
+          nupkg_file=$(find ../../artifacts -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
+          version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
+          echo "Installing atlas-ef version: $version"
+          dotnet tool install --add-source ../../artifacts --version "$version" atlas-ef
           dotnet atlas-ef --version
-          
-          Write-Host "Generating SQL for demo..."
-          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
-        shell: pwsh
+        shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          Write-Host "Running atlas-ef command..."
+          echo "Running atlas-ef command..."
           dotnet atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
+          exit_code=$?
           
-          Write-Host "Command exit code: $LASTEXITCODE"
+          echo "Command exit code: $exit_code"
           
-          if (!(Test-Path "generated_sqlserver.sql")) {
-            Write-Error "generated_sqlserver.sql was not created"
+          if [ ! -f "generated_sqlserver.sql" ]; then
+            echo "Error: generated_sqlserver.sql was not created"
             exit 1
-          }
+          fi
           
-          $generatedContent = Get-Content "generated_sqlserver.sql" -ErrorAction SilentlyContinue
-          Write-Host "Generated SQL content:"
-          if ($generatedContent) {
-            $generatedContent | Write-Host
-          } else {
-            Write-Host "Generated file is empty or unreadable"
-            Write-Host "File size: $((Get-Item 'generated_sqlserver.sql').Length) bytes"
+          echo "Generated SQL content:"
+          if [ -s "generated_sqlserver.sql" ]; then
+            cat generated_sqlserver.sql
+          else
+            echo "Generated file is empty or unreadable"
+            echo "File size: $(wc -c < generated_sqlserver.sql) bytes"
             exit 1
-          }
+          fi
           
-          if (!(Test-Path "current_sqlserver.sql")) {
-            Write-Error "current_sqlserver.sql not found"
+          if [ ! -f "current_sqlserver.sql" ]; then
+            echo "Error: current_sqlserver.sql not found"
             exit 1
-          }
+          fi
           
-          $currentContent = Get-Content "current_sqlserver.sql"
-          $diff = Compare-Object $currentContent $generatedContent
-          if ($diff) {
-            Write-Host "Differences found between current_sqlserver.sql and generated SQL:"
-            $diff | Format-Table
+          if ! diff -q current_sqlserver.sql generated_sqlserver.sql > /dev/null; then
+            echo "Differences found between current_sqlserver.sql and generated SQL:"
+            diff current_sqlserver.sql generated_sqlserver.sql
             exit 1
-          } else {
-            Write-Host "Generated SQL matches current_sqlserver.sql"
-          }
+          else
+            echo "Generated SQL matches current_sqlserver.sql"
+          fi
       - name: Install Atlas CLI
         uses: ariga/setup-atlas@v0
       - name: Verify Atlas CLI version
