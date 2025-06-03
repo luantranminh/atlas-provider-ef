@@ -59,6 +59,10 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4.0.0
@@ -84,17 +88,26 @@ jobs:
           version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
           echo "Installing atlas-ef version: $version"
           
-          # Try multiple installation approaches
-          echo "Attempting installation with both local and NuGet sources..."
-          dotnet tool install --add-source ../../artifacts --add-source https://api.nuget.org/v3/index.json --version "$version" atlas-ef || \
-          {
-            echo "First attempt failed, trying with restored dependencies..."
-            dotnet restore
-            dotnet tool install --add-source ../../artifacts --add-source https://api.nuget.org/v3/index.json --version "$version" atlas-ef
-          }
+          # Clear any existing tool installations to start fresh
+          dotnet tool uninstall atlas-ef --global || true
+          dotnet tool uninstall atlas-ef || true
           
+          # Create a proper NuGet config to ensure dependencies can be resolved
+          cat > nuget.config << EOF
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <add key="local" value="../../artifacts" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+          
+          # Install with explicit configuration
+          dotnet tool install --configfile nuget.config --version "$version" atlas-ef
+          
+          # Verify installation
           dotnet atlas-ef --version
-          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
