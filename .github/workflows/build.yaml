@@ -104,21 +104,37 @@ jobs:
             exit 1
           }
           
-          Write-Host "Uninstalling any existing atlas-ef tool..."
-          try {
-            dotnet tool uninstall atlas-ef 2>$null
-            Write-Host "Existing tool uninstalled"
-          } catch {
-            Write-Host "No existing tool to uninstall (this is normal)"
+          Write-Host "Updating tool manifest with atlas-ef version $version..."
+          # First, ensure we have a clean tool manifest
+          $toolsManifest = ".config/dotnet-tools.json"
+          if (!(Test-Path $toolsManifest)) {
+            Write-Host "Creating new tool manifest..."
+            dotnet new tool-manifest
           }
           
-          Write-Host "Installing atlas-ef from local artifacts with version $version..."
+          # Remove existing atlas-ef from manifest if it exists
+          try {
+            dotnet tool uninstall atlas-ef 2>$null
+            Write-Host "Existing tool removed from manifest"
+          } catch {
+            Write-Host "No existing tool in manifest (this is normal)"
+          }
+          
+          Write-Host "Adding atlas-ef to tool manifest with version $version..."
           dotnet tool install atlas-ef --no-cache --add-source ../../artifacts --ignore-failed-sources --version $version
           
           if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to install atlas-ef tool"
+            Write-Error "Failed to add atlas-ef tool to manifest"
             Write-Host "Available packages in artifacts:"
             Get-ChildItem "../../artifacts/*.nupkg" | ForEach-Object { Write-Host "  $($_.Name)" }
+            exit 1
+          }
+          
+          Write-Host "Restoring tools from manifest to ensure proper dependency resolution..."
+          dotnet tool restore
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to restore tools from manifest"
             exit 1
           }
           
