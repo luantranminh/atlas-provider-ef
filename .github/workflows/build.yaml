@@ -79,12 +79,17 @@ jobs:
       - name: Install AtlasEF
         shell: pwsh
         run: dotnet tool install --prerelease --add-source ./artifacts atlas-ef --global
+      - name: Verify AtlasEF tool version and Print SQL for demo
+        shell: pwsh
+        working-directory: ./src/Atlas.Provider.Demo
+        run: |
+          dotnet atlas-ef --version
+          dotnet atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
         run: |
           Write-Host "Running atlas-ef command..."
-          dotnet atlas-ef -- sqlserver
           dotnet atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
           
           Write-Host "Command exit code: $LASTEXITCODE"
