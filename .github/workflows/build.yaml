@@ -84,94 +84,33 @@ jobs:
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          echo "Packing and installing atlas-ef tool..."
-          
-          # Uninstall any existing global installation
-          dotnet tool uninstall -g atlas-ef || echo "No existing global installation found"
-          
-          # Restore dependencies first
+          # Uninstall existing and pack tool
+          dotnet tool uninstall -g atlas-ef || true
           dotnet restore ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj
+          dotnet pack ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj -c Release -o ./nupkg
           
-          # Pack the tool project
-          dotnet pack ../../src/Atlas.Provider.Loader/Atlas.Provider.Loader.csproj \
-            --configuration Release \
-            --output ./nupkg \
-            --verbosity normal
-          
-          echo "Packed files:"
-          ls -la ./nupkg/
-          
-          # Extract version from the nupkg file
+          # Extract version and install
           nupkg_file=$(find ./nupkg -name "atlas-ef.*.nupkg" ! -name "*symbols*" | head -1)
-          if [ -z "$nupkg_file" ]; then
-            echo "Error: No atlas-ef nupkg file found"
-            exit 1
-          fi
-          
           version=$(basename "$nupkg_file" | sed 's/^atlas-ef\.//' | sed 's/\.nupkg$//')
-          echo "Extracted version: $version"
-          
-          # Install the tool from local package source with specific version
           dotnet tool install --add-source ./nupkg --version "$version" -g atlas-ef
-          
-          # Verify installation
-          echo "Testing installed tool..."
-          echo "Checking global tools:"
-          dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
-          
-          atlas-ef -- sqlserver
       - name: Compare generated SQL with current_sqlserver.sql
         shell: bash
         working-directory: ./src/Atlas.Provider.Demo
         run: |
-          echo "Running atlas-ef command using globally installed tool..."
-          echo "Current directory: $(pwd)"
-          echo "Checking dotnet version:"
-          dotnet --version
-          
-          # Add .NET tools to PATH
           export PATH="$PATH:$HOME/.dotnet/tools"
           
-          echo "Verifying tool installation:"
-          dotnet tool list -g | grep atlas-ef || echo "Tool not found in global list"
-          
-          echo "Testing basic atlas-ef command first..."
-          atlas-ef --help > help_output.txt 2>&1 || echo "Help command failed with code $?"
-          echo "Help command output:"
-          cat help_output.txt
-          
-          echo "Now trying the actual command..."
+          # Generate SQL and verify
           atlas-ef -- sqlserver > generated_sqlserver.sql 2>&1
-          exit_code=$?
           
-          echo "Command exit code: $exit_code"
-          
-          if [ ! -f "generated_sqlserver.sql" ]; then
-            echo "Error: generated_sqlserver.sql was not created"
-            exit 1
-          fi
-          
-          echo "File exists. Size: $(wc -c < generated_sqlserver.sql) bytes"
-          echo "Generated SQL content:"
-          cat generated_sqlserver.sql
-          
-          # Only fail if the exit code was non-zero AND the file is empty
-          if [ $exit_code -ne 0 ] && [ ! -s "generated_sqlserver.sql" ]; then
-            echo "Command failed with exit code $exit_code and produced no output"
-            exit 1
-          fi
-          
-          if [ ! -f "current_sqlserver.sql" ]; then
-            echo "Error: current_sqlserver.sql not found"
+          if [ ! -s "generated_sqlserver.sql" ]; then
+            echo "Error: Failed to generate SQL"
             exit 1
           fi
           
           if ! diff -q current_sqlserver.sql generated_sqlserver.sql > /dev/null; then
-            echo "Differences found between current_sqlserver.sql and generated SQL:"
+            echo "Generated SQL differs from current_sqlserver.sql:"
             diff current_sqlserver.sql generated_sqlserver.sql
             exit 1
-          else
-            echo "Generated SQL matches current_sqlserver.sql"
           fi
       - name: Install Atlas CLI
         uses: ariga/setup-atlas@v0
