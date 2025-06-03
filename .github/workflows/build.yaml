@@ -92,7 +92,7 @@ jobs:
           Write-Host "Extracted version: $version"
           
           Write-Host "Installing atlas-ef version $version from artifacts..."
-          dotnet tool install --prerelease --add-source ./artifacts --version $version atlas-ef --global
+          dotnet tool install --add-source ./artifacts --version $version atlas-ef --global
       - name: Test AtlasEF and generate SQL
         shell: pwsh
         working-directory: ./src/Atlas.Provider.Demo
