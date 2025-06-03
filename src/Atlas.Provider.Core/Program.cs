@@ -48,7 +48,7 @@ namespace Atlas.Provider.Core
           {
             if (ctxInfo["ProviderName"]!.ToString()!.EndsWith("SqlServer"))
             {
-              Console.WriteLine("-- atlas:delimiter GO");
+              Console.WriteLine("-- atlas:delimiter GOOK");
             }
             Console.WriteLine(sql.Replace(Environment.NewLine, "\n"));
           }
