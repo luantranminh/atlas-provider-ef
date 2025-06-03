@@ -85,6 +85,8 @@ jobs:
         run: |
           dotnet tool restore
           dotnet atlas-ef -- sqlserver > generated_sqlserver.sql
+          # print the contents of the generated_sqlserver.sql file
+          Write-Host (Get-Content "generated_sqlserver.sql")
           if (!(Test-Path "current_sqlserver.sql")) {
             Write-Error "current_sqlserver.sql not found"
             exit 1
