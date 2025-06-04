@@ -376,9 +376,9 @@ internal class EFDesign : IDisposable
 
           if (classDeclaration != null)
           {
-            var lineSpan = syntaxTree.GetLineSpan(classDeclaration.Span);
-            var relativePath = Path.GetRelativePath(_projectDir, file);
-            return $"{relativePath}:{lineSpan.StartLinePosition.Line + 1}:{lineSpan.EndLinePosition.Line + 1}";
+            var span = syntaxTree.GetLineSpan(classDeclaration.Span);
+            var path = Path.GetRelativePath(_projectDir, file).Replace(Path.DirectorySeparatorChar, '/');
+            return $"{path}:{span.StartLinePosition.Line + 1}:{span.EndLinePosition.Line + 1}";
           }
         }
         catch
